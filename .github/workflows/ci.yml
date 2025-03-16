@@ -1,4 +1,4 @@
-name: Java CI with Maven - Build and Deploy to ECS
+name: Java CI with Maven & Build and Deploy to ECS
 
 on:
   push:
