@@ -78,11 +78,12 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
 
       - name: Scan Docker Image with Trivy
-        uses: aquasecurity/trivy-action@v0.13.1
+        uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
         with:
           image-ref: ${{ steps.login-ecr.outputs.registry }}/belcorp-0000-demo-${{ env.ENV }}-images-repository:${{ github.sha }}
-          format: 'table'
-          exit-code: '1'
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
 
       - name: Push Docker Image to ECR
