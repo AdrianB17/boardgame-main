@@ -55,7 +55,7 @@ jobs:
         run: |
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.projectKey=AdrianB17_boardgame-main \
-            -Dsonar.organization=abastidas_devops \
+            -Dsonar.organization=adrianb17 \
             -Dsonar.host.url=https://sonarcloud.io
 
       - name: Configure AWS Credentials
