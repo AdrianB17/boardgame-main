@@ -1,0 +1,75 @@
+name: Java CI with Maven - Build and Deploy to ECS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**'
+
+jobs:
+  build-and-push-ecr:
+    name: Build, Test, and Push to ECR
+    runs-on: ubuntu-22.04
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      ENV: dev
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.client_payload.ref }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, Tag, and Push Docker Image to ECR
+        id: build-push-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: belcorp-0000-demo-${{ env.ENV }}-images-repository
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+  trigger-deploy-ecs:
+    name: Trigger ECS Deployment
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    needs: build-and-push-ecr
+
+    steps:
+      - name: Trigger ECS Deployment Workflow
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          event-type: code-deploy-ecs-event
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
