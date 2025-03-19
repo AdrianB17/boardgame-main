@@ -54,4 +54,4 @@ This web application displays lists of board games and their reviews. While anyo
 
 ## Flujo CI/CD
 
-![flujo CI/CD](./assets/cicd.png)
+![flujo CI/CD](./src/cicd.png)
